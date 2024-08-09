@@ -541,6 +541,66 @@ def filter_sources(image, streak_positions, plot_streak=False, buffer=100,
 
 
 def create_mask(image, trail_id, endpoints, widths):
+
+    segment = np.zeros(image.shape, dtype=int)
+
+    xgrid, ygrid = np.meshgrid(np.arange(image.shape[1]), 
+                               np.arange(image.shape[0]))
+
+    # cycle through trail endpoints/widths
+    for t, e, w in zip(trail_id, endpoints, widths):
+
+        print(e)
+
+        # get slope/intercept of line defining trail
+        x1, y1 = e[0]
+        x2, y2 = e[1]
+
+        # calculate trail angle
+        deltay = y2 - y1
+        deltax = x2 - x1
+        theta = np.arctan2(deltay, deltax)
+        print(deltax)
+
+        # width is perpendicular distance from trail line. Actual extent of
+        # trail in y will be larger. # also consider cases where there = inf/0
+        if deltax == 0:
+
+            dx = w / 2
+            sel = (xgrid > (x2 - dx)) & (xgrid < (x2 + dx))
+
+        elif (deltax != 0) &  (theta < np.pi/4):
+
+            slope = deltay / deltax
+            intercept = y2 - (slope * x2)
+
+            dy = w / 2 / np.cos(theta)
+            yl = (slope * xgrid + intercept - dy)
+            yh = (slope * xgrid + intercept + dy)
+
+            sel = (ygrid > np.minimum(yl, yh)) & \
+                  (ygrid < np.maximum(yl, yh))
+            
+        elif (deltax != 0) & (theta >= np.pi/4):
+
+            slope = deltay / deltax
+            intercept = y2 - (slope * x2)
+
+            dx = w / 2 / np.sin(theta)
+            xl = ((ygrid - intercept) / slope) - dx
+            xh = ((ygrid - intercept) / slope) + dx
+
+            sel = (xgrid > np.minimum(xl, xh)) & \
+                  (xgrid < np.maximum(xl, xh))
+
+        segment[sel] = t
+
+    mask = segment > 0
+
+    return segment, mask
+
+
+def create_mask_old(image, trail_id, endpoints, widths):
     '''
     Creates an image mask given a set of trail endpoints and widths.
 

@@ -1065,8 +1065,9 @@ class TrailFinder:
             self.plot_image(ax=ax1)
             self.plot_mrt(ax=ax2)
             self.plot_image(ax=ax3)
-            ax3.imshow(self.mask, alpha=0.5, origin='lower', aspect='auto',
+            ax3.imshow(np.ma.masked_where(self.mask == 0, self.mask), alpha=0.5, origin='lower', aspect='auto',
                        cmap='Reds')
+            ax3.set_title('Image and Satellite Mask')
             ax3_xlim = ax3.get_xlim()
             ax3_ylim = ax3.get_ylim()
 

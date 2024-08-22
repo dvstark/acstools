@@ -1221,20 +1221,20 @@ class TrailFinder:
         # save the 1D profiles and diagnostic plots
         if self.save_profiles:
             # create a directory to hold the profiles. Use the rootname
-            profile_dir = Path.joinpath(self.output_dir, self.root)
+            profile_dir = Path(self.output_dir).joinpath(self.root)
             profile_dir.mkdir(exist_ok=True)
 
             # write out each profile
-            for id in self.source_list:
-                col1 = fits.column(name='index', format='4I', array=np.arange(len(self.profiles_1d[id]['med'])))
-                col2 = fits.Column(name='med', format='10E', array=self.profiles_1d[id]['med'])
-                coldefs = fits.ColDefs([col1, col2])
+            for id in self.source_list['id']:
+                #col1 = fits.column(name='index', format='4I', array=np.arange(self.profiles_1d[2]['med'].size))
+                col2 = fits.Column(name='med', format='E', array=self.profiles_1d[id]['med'])
+                coldefs = fits.ColDefs([col2])
                 hdu = fits.BinTableHDU.from_columns(coldefs)
 
                 # add some additional info to header
-                hdu.header['snr']
-                hdu.header['mean_flux']
-                hdu.header['width']
+                hdu.header['snr'] = self.profiles_1d[id]['snr']
+                hdu.header['mean_flux'] = self.profiles_1d[id]['mean_flux']
+                hdu.header['width'] = self.profiles_1d[id]['width']
                 hdu.header['center'] = self.profiles_1d[id]['center']
                 
                 profile_file = Path.joinpath(profile_dir, self.root + '_1dprof_{}.fits'.format(id))

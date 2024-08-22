@@ -500,6 +500,7 @@ def filter_sources(image, streak_positions, plot_streak=False, buffer=100,
         profiles[-1]['snr'] = snr
         profiles[-1]['width'] = width
         profiles[-1]['mean_flux'] = mean_flux
+        profiles[-1]['center'] = g.mean.value
 
         # plot if triggered
         if use_ax:

@@ -97,6 +97,7 @@ import logging
 import multiprocessing
 import os
 import warnings
+from pathlib import Path
 
 import numpy as np
 from astropy.io import fits
@@ -1083,14 +1084,15 @@ class TrailFinder:
     def save_output(self, close_plot=True):
         '''
         Save output. Any existing file will be overwritten.
-        This uses `root`, `output_dir`, `save_mrt`, `save_catalog`, and
-        `save_diagnostic`, so update them first, if needed. Output includes
-        optionally:
+        This uses `root`, `output_dir`, `save_mrt`, `save_catalog`,
+        `save_diagnostic`, and `save_profiles` so update them first, if needed. 
+        Output includes optionally:
 
         1. MRT
         2. Mask/segementation image
         3. Catalog
         4. Trail catalog
+        5. Individual trail cross-section profiles and plots
 
         Parameters
         ----------
@@ -1215,6 +1217,28 @@ class TrailFinder:
                         for k in self.save_image_header_keys:
                             if k in self.image_header:
                                 h[1].header[k] = self.image_header[k]
+
+        # save the 1D profiles and diagnostic plots
+        if self.save_profiles:
+            # create a directory to hold the profiles. Use the rootname
+            profile_dir = Path.joinpath(self.output_dir, self.root)
+            profile_dir.mkdir(exist_ok=True)
+
+            # write out each profile
+            for id in self.source_list:
+                col1 = fits.column(name='index', format='4I', array=np.arange(len(self.profiles_1d[id]['med'])))
+                col2 = fits.Column(name='med', format='10E', array=self.profiles_1d[id]['med'])
+                coldefs = fits.ColDefs([col1, col2])
+                hdu = fits.BinTableHDU.from_columns(coldefs)
+
+                # add some additional info to header
+                hdu.header['snr']
+                hdu.header['mean_flux']
+                hdu.header['width']
+                hdu.header['center'] = self.profiles_1d[id]['center']
+                
+                profile_file = Path.joinpath(profile_dir, self.root + '_1dprof_{}.fits'.format(id))
+                hdu.writeto(profile_file, overwrite=True)
 
     def _remove_angles(self):
         '''

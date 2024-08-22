@@ -908,7 +908,7 @@ class TrailFinder:
                                               check_persistence=self.check_persistence,
                                               min_persistence=self.min_persistence)
 
-        # update the status
+        # update the status 
         self.source_list.update(properties)
 
         # optionally trim the catalog of all rejected sources
@@ -916,6 +916,15 @@ class TrailFinder:
             sel = ((self.source_list['width'] < self.max_width) &
                    (self.source_list['snr'] > self.threshold))
             self.source_list = self.source_list[sel]
+
+            # trim list of profiles too
+            profiles = profiles[sel]
+
+        # update the profiles array to have the profile ID as the name
+        profiles_1d = {}
+        for entry, profile in zip(self.source_list, profiles):
+            profiles_1d[entry['id']] = profile
+
 
         # plot if triggered
         if self.plot and (plt is not None):

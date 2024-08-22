@@ -103,6 +103,7 @@ from astropy.io import fits
 from astropy.nddata import bitmask, block_reduce
 from astropy.table import Table
 from astropy.utils.data import get_pkg_data_filename
+from astropy.stats import sigma_clipped_stats
 
 from acstools.utils_findsat_mrt import (create_mask, filter_sources,
                                         merge_tables, radon, streak_endpoints,
@@ -923,7 +924,8 @@ class TrailFinder:
             endpoints = self.source_list['endpoints'][include]
             widths = self.source_list['width'][include]
             segment, mask = create_mask(self.image, trail_id, endpoints,
-                                        widths)
+                                        widths, 
+                                        min_mask_width=self.min_mask_width)
         else:
             mask = np.zeros(self.image.shape, dtype=bool)
             segment = np.zeros(self.image.shape, dtype=int)
@@ -962,8 +964,26 @@ class TrailFinder:
             LOG.info('Saving mask to '+file_name)
 
         return ax
+    
+    def plot_masked_rebinned(self, ax=None, bin=16):
+        '''Show the image with the masked regions removed. Extreme binning
+        possible to catch any wings from the satellite trail'''
 
-    def plot_segment(self):
+        if ax is None:
+            fig, ax = plt.subplots()
+            
+
+
+        masked_image = np.ma.masked_where(self.mask, self.image)
+        rebinned_masked_image = block_reduce(masked_image, bin, func=np.nansum)
+
+        __, med, std = sigma_clipped_stats(rebinned_masked_image)
+
+        ax.imshow(rebinned_masked_image, origin='lower', aspect='auto',
+                  vmin=med - std, vmax = med + 5*std)
+        ax.set_title('Rebinned Masked Image')
+
+    def plot_segment(self, ax=None):
         '''
         Generates a segmentation image of the identified trails
         (``self.segment``).
@@ -979,6 +999,10 @@ class TrailFinder:
             LOG.error('No segment map to show')
             return
 
+        # create ax if needed
+        if ax is None:
+            fig, ax = plt.subplots()
+
         # get unique values in segment
         unique_vals = np.unique(self.segment)
         data = np.zeros_like(self.segment)
@@ -989,7 +1013,6 @@ class TrailFinder:
 
         data_min = np.min(data).astype(int)
         data_max = np.max(data).astype(int)
-        fig, ax = plt.subplots()
 
         # update the colormap to match the segmentation IDs
         cmap = plt.get_cmap('tab20', data_max - data_min + 1)
@@ -1060,8 +1083,8 @@ class TrailFinder:
         # save the diagnostic plot
         if self.save_diagnostic and (plt is not None):
 
-            fig, [[ax1, ax2], [ax3, ax4]] = plt.subplots(2, 2,
-                                                         figsize=(20, 10))
+            fig, [[ax1, ax2], [ax3, ax4], [ax5, ax6]] = plt.subplots(3, 2,
+                                                         figsize=(20, 16))
             self.plot_image(ax=ax1)
             self.plot_mrt(ax=ax2)
             self.plot_image(ax=ax3)
@@ -1084,9 +1107,18 @@ class TrailFinder:
                     ax3.plot([x1, x2], [y1, y2], color=color, lw=5, alpha=0.5)
                     ax4.scatter(s['xcentroid'], s['ycentroid'],
                                 edgecolor=color, facecolor='none', s=100, lw=2)
+                    ax4.set_label('MRT with sources')
             # sometimes overplotting the "good" trails can cause axes to change
             ax3.set_xlim(ax3_xlim)
             ax3.set_ylim(ax3_ylim)
+
+            # plot the segmentation image
+            self.plot_segment(ax=ax5)
+
+            # plot masked, heavily rebinned image
+            self.plot_masked_rebinned(ax=ax6)
+
+
             plt.tight_layout()
             diagnostic_filename = os.path.join(self.output_dir,
                                                f'{self.root}_diagnostic.png')

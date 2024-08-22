@@ -540,7 +540,35 @@ def filter_sources(image, streak_positions, plot_streak=False, buffer=100,
     return properties
 
 
-def create_mask(image, trail_id, endpoints, widths):
+def create_mask(image, trail_id, endpoints, widths, min_mask_width = 1):
+    '''
+    Creates an image mask given a set of trail endpoints and widths.
+
+    Parameters
+    ----------
+    image : ndarray
+        Input image to be masked.
+    trail_id : array of int
+        ID numbers for each trail. These should be unique.
+    endpoints : array
+        An array containing the endpoints of each trail to contribute to the
+        mask. See :func:`filter_sources` for format.
+    widths : array
+        Widths for each trail.
+    min_mask_width : int, optional
+        Minimum trail width when creating the mask. Default is 1.
+
+    Returns
+    -------
+    segment : ndarray
+        A segmentation image where each pixel that is part of a masked
+        satellite trail is given a value of the corresponding trail ID. The
+        segmentation map does not adequately capture trail id when trails
+        overlap. This is a known issue.
+    mask : ndarray
+        Boolean mask (1=masked, 0=not masked).
+
+    '''
 
     segment = np.zeros(image.shape, dtype=int)
 
@@ -550,7 +578,8 @@ def create_mask(image, trail_id, endpoints, widths):
     # cycle through trail endpoints/widths
     for t, e, w in zip(trail_id, endpoints, widths):
 
-        print(e)
+        # enforce the minimum mask width
+        w = np.maximum(min_mask_width, w)
 
         # get slope/intercept of line defining trail
         x1, y1 = e[0]
@@ -560,7 +589,6 @@ def create_mask(image, trail_id, endpoints, widths):
         deltay = y2 - y1
         deltax = x2 - x1
         theta = np.arctan2(deltay, deltax)
-        print(deltax)
 
         # width is perpendicular distance from trail line. Actual extent of
         # trail in y will be larger. # also consider cases where there = inf/0
@@ -602,7 +630,8 @@ def create_mask(image, trail_id, endpoints, widths):
 
 def create_mask_old(image, trail_id, endpoints, widths):
     '''
-    Creates an image mask given a set of trail endpoints and widths.
+    Creates an image mask given a set of trail endpoints and widths. This method
+    is deprecated but here for now while the new version is being tested.
 
     Parameters
     ----------

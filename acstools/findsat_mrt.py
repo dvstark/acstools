@@ -216,6 +216,9 @@ class TrailFinder:
     save_mask : bool, optional
         See :attr:`~acstools.utils_findsat_mrt.TrailFinder.save_mask`.
         Default is `False`.
+    save_profiles : bool, optional
+        See :attr:`acstools.utils_findsat_mrt.TrailFinder.save_profiles`.
+        Default is `False`.
 
     '''  # noqa
     def __init__(
@@ -242,7 +245,8 @@ class TrailFinder:
             save_catalog=True,
             save_diagnostic=True,
             save_mrt=False,
-            save_mask=False):
+            save_mask=False,
+            save_profiles=False):
 
         # inputs
         self.image = image
@@ -287,6 +291,8 @@ class TrailFinder:
         self.save_diagnostic = save_diagnostic
         self.save_mrt = save_mrt
         self.save_mask = save_mask
+        self.save_profiles = save_profiles
+
 
         # plot image upon initialization
         if self.plot and (plt is not None):
@@ -547,6 +553,17 @@ class TrailFinder:
         if not isinstance(value, bool):
             raise ValueError(f"save_mask must be bool but got: {value}")
         self._save_mask = value
+
+    @property 
+    def save_profiles(self):
+        """Save the 1D profiles and diagnostic plots for all"""
+        return self._save_profiles
+
+    @save_profiles.setter
+    def save_profiles(self, value):
+        if not isinstance(value, bool):
+            raise ValueError(f"save_profiles must be bool but got: {value}")
+        self._save_profiles = value
 
     def run_mrt(self):
         '''
@@ -921,9 +938,9 @@ class TrailFinder:
             profiles = profiles[sel]
 
         # update the profiles array to have the profile ID as the name
-        profiles_1d = {}
+        self.profiles_1d = {}
         for entry, profile in zip(self.source_list, profiles):
-            profiles_1d[entry['id']] = profile
+            self.profiles_1d[entry['id']] = profile
 
 
         # plot if triggered

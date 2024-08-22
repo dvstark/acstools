@@ -156,6 +156,9 @@ class TrailFinder:
     max_width : int, optional
         See :attr:`~acstools.utils_findsat_mrt.TrailFinder.max_width`.
         The default is 75 pixels.
+    min_mask_width : int, optional
+        See :attr:`~acstools.utils_findsat_mrt.TrailFinder.min_mask_width`.
+        The default is 1.
     buffer : int, optional
         See :attr:`~acstools.utils_findsat_mrt.TrailFinder.buffer`.
         The default is 250 pixels on each side.
@@ -224,6 +227,7 @@ class TrailFinder:
             processes=2,
             min_length=25,
             max_width=75,
+            min_mask_width=1,
             buffer=250,
             threshold=5,
             theta=None,
@@ -248,6 +252,7 @@ class TrailFinder:
         self.threshold = threshold
         self.min_length = min_length
         self.max_width = max_width
+        self.min_mask_width = min_mask_width
         self.kernels = kernels
         self.processes = processes
         self.theta = theta
@@ -344,6 +349,19 @@ class TrailFinder:
         if value < 1:
             raise ValueError(f"Invalid max_width: {value}")
         self._max_width = value
+
+    @property
+    def min_mask_width(self):
+        """Minimum width when creating mask for a given trail
+        Any trails with measured width below this value will use this minimum 
+        width when actually creating the mask"""
+        return self._min_mask_width
+    
+    @min_mask_width.setter
+    def min_mask_width(self, value):
+        if value < 1:
+            raise ValueError(f"Invalid min_mask_width: {value}")
+        self._min_mask_width = value
 
     @property
     def buffer(self):
@@ -880,15 +898,15 @@ class TrailFinder:
             LOG.info('Min persistence: {}'.format(self.min_persistence))
 
         # run filtering routine
-        properties = filter_sources(self.image,
-                                    self.source_list['endpoints'],
-                                    max_width=self.max_width,
-                                    buffer=self.buffer,
-                                    plot_streak=plot_streak,
-                                    min_length=self.min_length,
-                                    minsnr=self.threshold,
-                                    check_persistence=self.check_persistence,
-                                    min_persistence=self.min_persistence)
+        properties, profiles = filter_sources(self.image,
+                                              self.source_list['endpoints'],
+                                              max_width=self.max_width,
+                                              buffer=self.buffer,
+                                              plot_streak=plot_streak,
+                                              min_length=self.min_length,
+                                              minsnr=self.threshold,
+                                              check_persistence=self.check_persistence,
+                                              min_persistence=self.min_persistence)
 
         # update the status
         self.source_list.update(properties)

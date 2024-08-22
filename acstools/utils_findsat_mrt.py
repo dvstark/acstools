@@ -431,6 +431,9 @@ def filter_sources(image, streak_positions, plot_streak=False, buffer=100,
     persistence = np.zeros(n_streaks)
     mean_fluxes = np.zeros(n_streaks)
 
+    # save the profiles in an array of dictionaries dictionary
+    profiles = []
+
     # cycle through lines and add them to the mask if they pass tests
     for ii, p in enumerate(streak_positions):
 
@@ -463,11 +466,14 @@ def filter_sources(image, streak_positions, plot_streak=False, buffer=100,
             warnings.filterwarnings(action='ignore',
                                     message='All-NaN slice encountered')
             medarr = np.nanmedian(subregion, axis=1)
-
+        
         # get number of pixels being considered at each point; remove those
         # that are too small such that median unreliable
         narr = np.sum(np.isfinite(subregion), axis=1)
         medarr[narr < min_length] = np.nan
+
+        # 
+        profiles.append({'med':medarr})
 
         # set up plot
         use_ax = None
@@ -490,6 +496,11 @@ def filter_sources(image, streak_positions, plot_streak=False, buffer=100,
         widths[ii] = width
         mean_fluxes[ii] = mean_flux
 
+        # add this info to profiles array of dictionaries too
+        profiles[-1]['snr'] = snr
+        profiles[-1]['width'] = width
+        profiles[-1]['mean_flux'] = mean_flux
+
         # plot if triggered
         if use_ax:
             ax1.set_title(f'snr={snr}, width={width}')
@@ -500,6 +511,7 @@ def filter_sources(image, streak_positions, plot_streak=False, buffer=100,
         # update status as needed
         if (snr > minsnr) & (width < max_width):
             status[ii] = 1
+            profiles[-1]['status'] = status[ii]
 
             # new step; track persistence (if toggled)
             persistence[ii] = -1
@@ -531,13 +543,16 @@ def filter_sources(image, streak_positions, plot_streak=False, buffer=100,
                 if persistence[ii] > min_persistence:
                     status[ii] = 2
 
+                profiles[-1]['persistence'] = persistence[ii]
+                profiles[-1]['status'] = status[ii]
+
     properties = Table()
     properties['mean flux'] = mean_fluxes
     properties['width'] = widths
     properties['snr'] = snrs
     properties['persistence'] = persistence
     properties['status'] = status
-    return properties
+    return properties, profiles
 
 
 def create_mask(image, trail_id, endpoints, widths, min_mask_width = 1):

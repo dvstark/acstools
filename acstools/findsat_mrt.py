@@ -1225,7 +1225,9 @@ class TrailFinder:
             profile_dir.mkdir(exist_ok=True)
 
             # write out each profile
-            for id in self.source_list['id']:
+            for item in self.source_list:
+                id = item['id']
+
                 #col1 = fits.column(name='index', format='4I', array=np.arange(self.profiles_1d[2]['med'].size))
                 col2 = fits.Column(name='med', format='E', array=self.profiles_1d[id]['med'])
                 coldefs = fits.ColDefs([col2])
@@ -1239,6 +1241,42 @@ class TrailFinder:
                 
                 profile_file = Path.joinpath(profile_dir, self.root + '_1dprof_{}.fits'.format(id))
                 hdu.writeto(profile_file, overwrite=True)
+
+                # now make diagnostic plot
+                fig, [[ax1, ax2], [ax3, ax4]] = plt.subplots(2, 2,
+                                                         figsize=(16, 10))
+                self.plot_image(ax=ax1, scale=(-1, 3))
+
+                # make plot of profile
+                #ax2.plot(np.log10(self.profiles_1d[id]['med'] - np.min(self.profiles_1d[id]['med'])))
+                log_med = np.log10(self.profiles_1d[id]['med'] + 100)
+                ax2.plot(log_med)
+                ax2.axvline(self.profiles_1d[id]['center'],color='red',alpha=0.5)
+
+                final_width = np.maximum(self.min_mask_width, self.profiles_1d[id]['width'])
+
+                ax2.axvline(self.profiles_1d[id]['center'] + final_width / 2, color='magenta', alpha=0.75)
+                ax2.axvline(self.profiles_1d[id]['center'] - final_width / 2, color='magenta',alpha=0.75)
+
+                xmin = np.maximum(self.profiles_1d[id]['center'] - 3*final_width, 0)
+                xmax = np.minimum(self.profiles_1d[id]['center'] + 3*final_width, len(self.profiles_1d[id]['med']))
+
+                ax2.set_xlim(xmin, xmax)
+
+                self.plot_image(ax=ax3, scale=(-1, 3))
+
+                # create custom mask here to overlay only this trail on iage
+                endpoints = item['endpoints']
+                widths = item['width']
+                subseg, submask = create_mask(self.image, [id], [endpoints],
+                                              [widths], 
+                                              min_mask_width=self.min_mask_width)
+
+                ax3.imshow(np.ma.masked_where(submask == 0, submask)*255, alpha=0.4, origin='lower', aspect='auto',
+                cmap='Reds')
+
+                self.plot_masked_rebinned(ax=ax4)
+
 
     def _remove_angles(self):
         '''

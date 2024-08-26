@@ -616,7 +616,7 @@ class TrailFinder:
         if self.plot and (plt is not None):
             self.plot_mrt()
 
-    def plot_image(self, ax=None, scale=(-1, 5), overlay_mask=False):
+    def plot_image(self, ax=None, scale=(-1, 5), overlay_mask=False, cmap='viridis'):
         '''
         Plot the input image.
 
@@ -650,7 +650,7 @@ class TrailFinder:
         self._image_stddev = self._image_mad / 0.67449  # using MAD to avoid
         # influence from outliers
 
-        ax.imshow(self.image, cmap='viridis', origin='lower', aspect='auto',
+        ax.imshow(self.image, cmap=cmap, origin='lower', aspect='auto',
                   vmin=scale[0]*self._image_stddev,
                   vmax=scale[1]*self._image_stddev)
         ax.set_xlabel('X [pix]')
@@ -1245,7 +1245,7 @@ class TrailFinder:
                 # now make diagnostic plot
                 fig, [[ax1, ax2], [ax3, ax4]] = plt.subplots(2, 2,
                                                          figsize=(16, 10))
-                self.plot_image(ax=ax1, scale=(-1, 3))
+                self.plot_image(ax=ax1, scale=(-1, 3), cmap='Greys')
 
                 # make plot of profile
                 #ax2.plot(np.log10(self.profiles_1d[id]['med'] - np.min(self.profiles_1d[id]['med'])))
@@ -1272,7 +1272,7 @@ class TrailFinder:
 
                 ax2.text(0.99,0.99,status_string,transform=ax2.transAxes, ha='right', va='top')
 
-                self.plot_image(ax=ax3, scale=(-1, 3))
+                self.plot_image(ax=ax3, scale=(-1, 3), cmap='Greys')
 
                 # create custom mask here to overlay only this trail on iage
                 endpoints = item['endpoints']
@@ -1281,8 +1281,7 @@ class TrailFinder:
                                               [widths], 
                                               min_mask_width=self.min_mask_width)
 
-                ax3.imshow(np.ma.masked_where(submask == 0, submask)*255, alpha=0.4, origin='lower', aspect='auto',
-                cmap='Reds')
+                ax3.imshow(np.ma.masked_where(submask == 0, submask)*255, alpha=0.4, origin='lower', aspect='auto')
                 ax3.set_title('Input image with mask')
 
                 self.plot_masked_rebinned(ax=ax4)

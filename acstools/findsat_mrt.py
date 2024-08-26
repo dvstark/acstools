@@ -1252,6 +1252,7 @@ class TrailFinder:
                 log_med = np.log10(self.profiles_1d[id]['med'] + 100)
                 ax2.plot(log_med)
                 ax2.axvline(self.profiles_1d[id]['center'],color='red',alpha=0.5)
+                ax2.set_title(f'{self.root}, profile id={id}')
 
                 final_width = np.maximum(self.min_mask_width, self.profiles_1d[id]['width'])
 
@@ -1262,6 +1263,14 @@ class TrailFinder:
                 xmax = np.minimum(self.profiles_1d[id]['center'] + 3*final_width, len(self.profiles_1d[id]['med']))
 
                 ax2.set_xlim(xmin, xmax)
+
+                # add a little status string
+                if item['status'] <= 1:
+                    status_string = 'status = rejected ({})'.format(item['status'])
+                else:
+                    status_string = 'status = accepted ({})'.format(item['status'])
+
+                ax2.text(0.99,0.99,status_string,transform=ax2.transAxes, ha='right', va='top')
 
                 self.plot_image(ax=ax3, scale=(-1, 3))
 
@@ -1274,8 +1283,12 @@ class TrailFinder:
 
                 ax3.imshow(np.ma.masked_where(submask == 0, submask)*255, alpha=0.4, origin='lower', aspect='auto',
                 cmap='Reds')
+                ax3.set_title('Input image with mask')
 
                 self.plot_masked_rebinned(ax=ax4)
+                profile_diagnostic_filename = os.path.join(profile_dir,
+                                               f'{self.root}_{id}_diagnostic.png')
+                plt.savefig(profile_diagnostic_filename, dpi=150)    
 
 
     def _remove_angles(self):

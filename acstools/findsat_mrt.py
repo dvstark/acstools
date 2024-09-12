@@ -280,6 +280,7 @@ class TrailFinder:
         self._medrt = None
         self._image_mad = None
         self._image_stddev = None
+        self._image_med = None
         if plt is not None:
             self._interactive = mpl.is_interactive()
         else:
@@ -601,6 +602,7 @@ class TrailFinder:
             self._image_mad = np.nanmedian(np.abs(self.image))
 
         # using MAD to avoid influence from outliers
+        self.image_med = np.nanmedian(self.image)
         self._image_stddev = self._image_mad / 0.67449
         # error on median ~ 1.25x error on mean. There are regions with length
         # equals zero which keeps raising warnings. Suppressing that warning
@@ -651,8 +653,8 @@ class TrailFinder:
         # influence from outliers
 
         ax.imshow(self.image, cmap=cmap, origin='lower', aspect='auto',
-                  vmin=scale[0]*self._image_stddev,
-                  vmax=scale[1]*self._image_stddev)
+                  vmin=self._image_med + scale[0]*self._image_stddev,
+                  vmax=self._image_med + scale[1]*self._image_stddev)
         ax.set_xlabel('X [pix]')
         ax.set_ylabel('Y [pix]')
         ax.set_title('Input Image')
@@ -671,7 +673,7 @@ class TrailFinder:
                 file_name = file_name + '_mask'
             plt.savefig(file_name + '.png')
 
-    def plot_mrt(self, ax=None, scale=(0, 10), show_sources=False):
+    def plot_mrt(self, ax=None, scale=(-1, 10), show_sources=False):
         '''
         Plot the MRT.
 
@@ -707,7 +709,8 @@ class TrailFinder:
             fig, ax = plt.subplots()
 
         ax.imshow(self.mrt, aspect='auto', origin='lower',
-                  vmin=scale[0]*self._madrt, vmax=scale[1]*self._madrt)
+                  vmin=self._medrt+scale[0]*self._madrt, 
+                  vmax=self._medrt+scale[1]*self._madrt)
         ax.set_title('MRT')
         ax.set_xlabel('angle(theta) pixel')
         ax.set_ylabel('offset(rho) pixel')

@@ -487,6 +487,9 @@ def filter_sources(image, streak_positions, plot_streak=False, buffer=100,
             use_ax = ax1
 
         # measure trail properties
+        print('this is the array we are fitting')
+        print(medarr)
+
         g, snr, width, mean_flux = fit_streak_profile(medarr,
                                                       (None, dy_streak, 5),
                                                       ax=use_ax,
@@ -1559,3 +1562,13 @@ def create_mrt_line_kernel(width, sigma, outfile=None, shape=(1024, 2048),
         fits.writeto(outfile, cutout.data, overwrite=True)
 
     return cutout.data
+
+#def create_trail_diagnostic(image_path, ext, mask_path, profile_path, catalog):
+
+    #top-left: show original image
+
+    #top-right: show 1d profile with center and width
+
+    #bottom-left: image + mask
+
+    # bottom right: rebinned image

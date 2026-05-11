@@ -1,6 +1,7 @@
 """Test satellite trail detection.
 
 .. note:: Cannot test ``detsat()`` because PHT results change from run to run!
+.. note:: Adding a test ``for detsat()`` that simply checks to see if it runs without error. No comparison against a truthfile is performed.
 
 """
 import pytest
@@ -14,6 +15,14 @@ pytest.importorskip("skimage")
 
 class TestSatDet(BaseACSTOOLS):
     detector = 'wfc'
+
+    def test_detsat_runs(self):
+        """Test that satellite trail detection runs without error."""
+        rootname = 'jc8m10syq'
+        inputfile = rootname + '_flc.fits'  # This is modified in-place
+
+        # run detsat
+        res, err = satdet.detsat(inputfile, chips = [1, 4], verbose=True)
 
     def test_trail_mask(self):
         """Mask satellite trail on WFC EXT 6."""

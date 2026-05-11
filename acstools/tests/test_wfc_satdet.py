@@ -22,7 +22,7 @@ class TestSatDet(BaseACSTOOLS):
         inputfile = rootname + '_flc.fits'  # This is modified in-place
 
         # run detsat
-        res, err = satdet.detsat(inputfile, chips = [1, 4], verbose=True)
+        res, err = satdet.detsat(inputfile, chips=[1, 4], verbose=True)
 
     def test_trail_mask(self):
         """Mask satellite trail on WFC EXT 6."""
